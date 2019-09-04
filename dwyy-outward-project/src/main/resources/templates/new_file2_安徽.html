@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+    <head>
+        <meta charset="utf-8" />
+        <title>首页</title>
+		<script type="text/javascript" src="../static/js/jquery-2.1.1.min.js" th:src="@{/js/jquery-2.1.1.min.js}"></script>
+		<script type="text/javascript" src=".../static/js/echarts.min.js" th:src="@{/js/echarts.min.js}"></script>
+		<script type="text/javascript" src="../js/province/anhui.js" th:src="@{/js/province/anhui.js}"></script>
+		<script type="text/javascript" src="../static/js/china.js" th:src="@{/js/china.js}"></script>
+		<script type="text/javascript" src="../static/js/world.js" th:src="@{/js/world.js}"></script>
+        <style>
+            .page {
+                display: flex;
+                flex-wrap: wrap;
+                width: 100%;
+                height: 100%;
+                overflow-y: auto;
+            }
+            
+            .red {
+                background-color: #FF5722;
+            }
+            
+            .green {
+                background-color: #009688;
+            }
+            
+            .blue {
+                background-color: #1E9FFF;
+            }
+            
+            .yellow {
+                background-color: #FFB800;
+            }
+            
+            .index-module {
+                display: flex;
+                flex-direction: column;
+                width: 32rem;
+                height: 30rem;
+                margin: 1rem;
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            }
+            
+            .big-module {
+                width: 56rem;
+            }
+            
+            .index-module-title {
+                padding: 1rem;
+                color: #fff;
+                font-family: '楷体';
+                font-weight: bold;
+            }
+            
+            .index-module-content {
+                height: calc(100% - 50px);
+            }
+            
+            .index-Chart {
+                height: calc(100% - 1rem);
+                padding: 0.5rem;
+            }
+			
+			.map {
+				height: 40rem;
+			}
+        </style>
+    </head>
+
+    <body>
+		<div class="index-module big-module map">
+		                <div class="index-module-title blue">
+		                    <span id="ServerState"></span>
+		                </div>
+		                <div class="index-module-content">
+		                    <div id="ServerStateData" class="index-Chart">
+								<button onclick="MyEChartsMap(testPointdata, testLinedata, '服务器状态')"></button>
+		                    </div>
+		                </div>
+		            </div>
+    </body>
+	
+	<script type="text/javascript">
+		window.onload = function(){
+			MyEChartsMap(testPointdata, testLinedata, '服务器状态');
+		};
+		
+		//点数据
+		var testPointdata = [{
+		        "name": "合肥市",
+		        "log": 117.283042,
+		        "lat": 31.86119,
+		        "remark": "备注齐齐哈尔"
+		    },
+		    {
+		        "name": "芜湖市",
+		        "log": 118.376451, 
+		        "lat": 31.326319,
+		        "remark": "备注赤峰"
+		    },
+		    {
+		        "name": "蚌埠市",
+		        "log": 117.363228, 
+		        "lat": 32.939667,
+		        "remark": "备注海门"
+		    },
+		    {
+		        "name": "淮南市",
+		        "log": 117.018329, 
+		        "lat": 32.647574,
+		        "remark": "备注成都"
+		    },
+			{
+			    "name": "宣城市",
+			    "log": 118.757995,  
+			    "lat": 30.945667,
+			    "remark": "备注宣城市"
+			},
+			{
+			    "name": "安庆市",
+			    "log": 117.043551,
+			    "lat": 30.50883,
+			    "remark": "备注安庆市"
+			}
+		]
+		//线数据（state代表线路是否通畅，0线路正常，1线路损坏）
+		var testLinedata = [{
+		        "fromName": "蚌埠市",
+		        "toName": "淮南市",
+		        "state": 0
+		    },
+		    {
+		        "fromName": "芜湖市",
+		        "toName": "淮南市",
+		        "state": 1
+		    },
+		    {
+		        "fromName": "合肥市",
+		        "toName": "淮南市",
+		        "state": 0
+		    },
+		    {
+		        "fromName": "合肥市",
+		        "toName": "蚌埠市",
+		        "state": 0
+		    },
+			{
+			    "fromName": "宣城市",
+			    "toName": "安庆市",
+			    "state": 0
+			}
+		]
+		
+		/**
+		 * ECharts地图
+		 * @param {Object} dataPoint 点数据
+		 * @param {Object} dataLine  线数据
+		 * @param {Object} title     标题
+		 */
+		function MyEChartsMap(dataPoint, dataLine,title) {
+		    // 基于准备好的dom，初始化echarts实例
+		    var myChart = echarts.init(document.getElementById("ServerStateData"));
+		
+		    $("#ServerState").html(title);
+		
+		    var option = new Object();
+		
+		    //配置信息
+		    option = {
+		        tooltip: {
+		
+		            formatter: function(params) {
+		                //这里如果不希望内容在一行显示也可以自定义css
+		                switch(params.seriesType) {
+		                    case "scatter":
+		                        //点提示信息
+		                        return "站点名称：" + params.name + ",说明：" + params.value.toString().split(',')[2];
+		                        break;
+		                    case "lines":
+		                        //线提示信息
+		                        return params.data['fromName'] + "~" + params.data['toName'];
+		                        break;
+		                    case "map":
+		                        //面提示信息
+		                        return "区域：" + params.name + ",指数：" + params.value;
+		                        break;
+		                }
+		            }
+		        },
+		        /*地图设置*/
+		        visualMap: {
+		            min: 0, //最小颜色
+		            max: 1500, //最大颜色
+		            left: 'left',
+		            top: 'bottom',
+		            text: ['High', 'Low'],
+		            seriesIndex: [1],
+		            inRange: {
+		                color: ['#e0ffff', '#FFFFCC'] //色彩区间
+		            },
+		            calculable: true
+		        },
+		        geo: {
+		            map: '安徽',
+		            roam: true,
+		            label: {
+		                normal: {
+		                    show: true,
+		                    textStyle: {
+		                        color: 'rgba(0,0,0,0.4)'
+		                    }
+		                }
+		            },
+		            itemStyle: {
+		                normal: {
+		                    borderColor: 'rgba(0, 0, 0, 0.2)'
+		                },
+		                emphasis: {
+		                    areaColor: null,
+		                    shadowOffsetX: 0,
+		                    shadowOffsetY: 0,
+		                    shadowBlur: 20,
+		                    borderWidth: 0,
+		                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+		                }
+		            }
+		        },
+		        /*地图设置结束*/
+		
+		        /*数据源*/
+		        series: [
+		            //点数据
+		            {
+		                type: 'scatter', //类型，表示点数据
+		                coordinateSystem: 'geo',
+		                data: convertPointData(dataPoint), //数据源
+		                symbolSize: 8, //标记点大小
+		                //标记样式：可使用svg图标
+		                symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+		                //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+		                //角度信息
+		                symbolRotate: 0,
+		                //鼠标选中说明
+		                label: {
+		                    normal: {
+		                        formatter: '{b}', //tooltip显示，自定义参考上方例子
+		                        position: 'left', //对齐
+		                        show: false //是否一直显示
+		                    },
+		                    emphasis: {
+		                        show: true
+		                    }
+		                },
+		                itemStyle: {
+		                    normal: {
+		                        color: '#F06C00' //颜色信息
+		                    }
+		                }
+		            },
+		            //底图数据-蓝色部分。
+		            {
+		                name: 'categoryA',
+		                type: 'map',
+		                geoIndex: 0,
+		                data: [{
+		                        name: '淮北市',
+		                        value: randomValue()
+		                    }, // randomValue() 表示一个随机的颜色数据，如需固定颜色请修改为确定的数字
+		                    {
+		                        name: '宿州市',
+		                        value: randomValue()
+		                    }, //  颜色设置参考visualMap模块
+		                    {
+		                        name: '蚌埠市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '滁州市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '马鞍山市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '芜湖市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '宣城市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '黄山市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '池州市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '安庆市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '铜陵市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '合肥市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '六安市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '阜阳市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '淮南市',
+		                        value: randomValue()
+		                    },
+		                    {
+		                        name: '豪州市',
+		                        value: randomValue()
+		                    }
+		                ]
+		            },
+		            //线数据01  -- 正常
+		            {
+		                tooltip: {},
+		                type: 'lines',
+		                zlevel: 20,
+		                symbol: ['none', 'arrow'],
+		                symbolSize: 6,
+		                //动画
+		                effect: {
+		                    show: true,
+		                    period: 3,
+		                    trailLength: 0,
+		                    //移动点样式。可使用预制，也可使用svg自定义。
+		                    //symbol: 'path://M1705.06,1318.313v-89.254l-319.9-221.799l0.073-208.063c0.521-84.662-26.629-121.796-63.961-121.491c-37.332-0.305-64.482,36.829-63.961,121.491l0.073,208.063l-319.9,221.799v89.254l330.343-157.288l12.238,241.308l-134.449,92.931l0.531,42.034l175.125-42.917l175.125,42.917l0.531-42.034l-134.449-92.931l12.238-241.308L1705.06,1318.313z',
+		                    symbol: 'triangle',
+		                    symbolSize: 6
+		                },
+		                lineStyle: {
+		                    normal: {
+		                        type: 'solid',
+		                        color: '#a6c84c', //线条颜色
+		                        width: 1,
+		                        opacity: 0.6,
+		                        curveness: 0.2
+		                    }
+		                },
+		                data: convertLineData(dataLine, dataPoint, 0)
+		            },
+		            //线数据02 --损坏
+		            {
+		                tooltip: {},
+		                type: 'lines',
+		                zlevel: 20,
+		                symbol: ['none', 'arrow'],
+		                symbolSize: 6,
+		                //动画效果--异常线路不显示动画
+		                effect: {
+		                    show: false,
+		                    period: 3,
+		                    trailLength: 0,
+		                    //symbol: 'path://M1705.06,1318.313v-89.254l-319.9-221.799l0.073-208.063c0.521-84.662-26.629-121.796-63.961-121.491c-37.332-0.305-64.482,36.829-63.961,121.491l0.073,208.063l-319.9,221.799v89.254l330.343-157.288l12.238,241.308l-134.449,92.931l0.531,42.034l175.125-42.917l175.125,42.917l0.531-42.034l-134.449-92.931l12.238-241.308L1705.06,1318.313z',
+		                    symbol: 'triangle',
+		                    symbolSize: 6
+		                },
+		                lineStyle: {
+		                    normal: {
+		                        type: 'dashed',
+		                        color: '#FF3333', //线条颜色
+		                        width: 1,
+		                        opacity: 0.6,
+		                        curveness: 0.2
+		                    }
+		                },
+		                data: convertLineData(dataLine, dataPoint, 1)
+		            }
+		        ]
+		    };
+		
+		    myChart.setOption(option, true);
+		    //绑定单击事件
+		    myChart.on('click', function(params) {
+		        switch(params.seriesType) {
+		            case "lines":
+		                //单击线
+		                alert(params.data['fromName'] + "~" + params.data['toName']);
+		
+		                break;
+		                //单击面       
+		            case 'map':
+						debugger 
+		                alert(params.name);
+						window.location.href = "http://127.0.0.1:8848/Echarts-关系图/地图/AnHui-Demo.html";
+		                break;
+		                //单击点        
+		            case "scatter":
+		                alert("站点名称：" + params.name + ",说明：" + params.value.toString().split(',')[2]);
+		                break;
+		        }
+		    });
+		
+		}
+		
+		/**
+		 * 组合点数据
+		 * @param {Object} data
+		 */
+		function convertPointData(data) {
+		    var res = [];
+		    for(item in data) {
+		        res.push({
+		            name: data[item].name,
+		            value: [data[item].log, data[item].lat, data[item].remark]
+		
+		        });
+		    }
+		    return res;
+		}
+		
+		/**
+		 * 组合线数据
+		 * @param {Object} dataline 线数据
+		 * @param {Object} datapoint 点数据
+		 * @param{Object} type 线类型（0正常，1损坏）
+		 */
+		function convertLineData(dataline, datapoint, type) {
+		    var res0 = [];
+		    var res1 = [];
+		    for(var i = 0; i < dataline.length; i++) {
+		        var fromName = dataline[i].fromName;
+		        var toName = dataline[i].toName;
+		        var state = dataline[i].state;
+		        if(state == 0) {
+		            res0.push({
+		                fromName: fromName,
+		                toName: toName,
+		                coords: [SearchData(fromName, datapoint), SearchData(toName, datapoint)]
+		            })
+		        } else {
+		            res1.push({
+		                fromName: fromName,
+		                toName: toName,
+		                coords: [SearchData(fromName, datapoint), SearchData(toName, datapoint)]
+		            })
+		        }
+		
+		    }
+		    if(type == 0) {
+		        return res0;
+		    } else {
+		        return res1;
+		    }
+		};
+		
+		/**
+		 * 在点数据中查找对应数据经纬度
+		 * @param {Object} name
+		 * @param {Object} datapoint
+		 */
+		function SearchData(name, datapoint) {
+		    var value = [];
+		    var i = 0;
+		    while(i < datapoint.length) {
+		
+		        if(name == datapoint[i].name) {
+		            value.push(datapoint[i].log, datapoint[i].lat);
+		            break;
+		        } else {
+		            i++;
+		            continue;
+		        }
+		    }
+		    return value;
+		}
+		
+		//随机颜色函数
+		function randomValue() {
+		    return Math.round(Math.random() * 1000);
+		}
+	</script>
+
+</html>

@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8"/>
+    <title>首页</title>
+    <script type="text/javascript" src="../static/js/jquery-2.1.1.min.js" th:src="@{/js/jquery-2.1.1.min.js}"></script>
+    <script type="text/javascript" src=".../static/js/echarts.min.js" th:src="@{/js/echarts.min.js}"></script>
+    <script type="text/javascript" src="../static/js/china.js" th:src="@{/js/china.js}"></script>
+    <script type="text/javascript" src="../static/js/world.js" th:src="@{/js/world.js}"></script>
+    <style>
+
+
+        .blue {
+            background-color: #1E9FFF;
+        }
+
+
+        .index-module {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        }
+
+        .big-module {
+            width: 100%;
+            height: 100%;
+        }
+
+        .index-module-title {
+            padding: 1rem;
+            color: #fff;
+            font-family: '楷体';
+            font-weight: bold;
+        }
+
+        .index-module-content {
+            height: calc(100% - 50px);
+        }
+
+        .index-Chart {
+            height: calc(100% - 1rem);
+            padding: 0.5rem;
+        }
+
+        .map {
+            height: 44rem;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        clearfix:after {
+            content: '';
+            visibility: hidden;
+            font-size: 0;
+            height: 0;
+            display: block;
+            clear: both;
+        }
+
+        li{
+            list-style-type: disc
+            width: 100px;
+            height: 60px;
+            font-size: 50px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="ServerStateData" class="map" style="height: 100%;width: 90%;float: left;">
+    <button onclick="MyEChartsMap(testPointdata, testLinedata, '服务器状态')"></button>
+</div>
+
+<div id="ServerStateData1" style="height: 100%;width: 10%;float: left;text-align:center;">
+    <ul id="nav" style="text-align:center;height: 100%;line-height: 60px">
+        <li value="1000" style="color: #ff7f50;"><span style="font-size: 20px"><a href="#" value="1000">1000KV</a></span></li>
+        <li value="750" style="color: #87cefa"><span style="font-size: 20px"><a href="#" value="750">750KV</a></span></li>
+        <li value="500" style="color: #da70d6"><span style="font-size: 20px"><a href="#" value="500">500KV</a></span></li>
+        <li value="350" style="color: #32cd32"><span style="font-size: 20px"><a href="#" value="350">350KV</a></span></li>
+        <li value="330" style="color: #6495ed"><span style="font-size: 20px"><a href="#" value="330">330KV</a></span></li>
+        <li value="220" style="color: #ba55d3"><span style="font-size: 20px"><a href="#" value="220">220KV</a></span></li>
+        <li value="110" style="color: #cd5c5c"><span style="font-size: 20px"><a href="#" value="110">110KV</a></span></li>
+        <li value="66" style="color: #ffa500"><span style="font-size: 20px"><a href="#" value="66">66KV</a></span></li>
+        <li value="35" style="color: #40e0d0"><span style="font-size: 20px"><a href="#" value="35">35KV</a></span></li>
+    </ul>
+</div>
+</body>
+<script type="text/javascript">
+    var curPath = window.document.location.href;
+    var pathName = window.document.location.pathname;
+    var pos = curPath.indexOf(pathName);
+    var localhostPath = curPath.substring(0, pos);
+    var projectName = pathName.substring(0, pathName.substr(1).indexOf('/') + 1);
+    $('#nav a').click(function () {
+        var condition = "";
+        var index3 = $(this).index('a')
+        var as = document.getElementsByTagName('a');
+        condition = as[index3].innerText;
+        var params = {
+            "cityname": "gansu",
+            "condition": condition
+        }
+        var json = JSON.stringify(params);
+        $.ajax({
+            url: localhostPath + projectName + "/bdz",
+            dataType: "json",
+            data: json,
+            type: 'post',
+            contentType: 'application/json;charset=utf-8',
+            success: function (data) {
+                var jsonArrayData_Point = MyEChartsData_Point(data);
+                var jsonArrayData_Line = MyEChartsData_LineBDZ(data);
+                MyEChartsMap(jsonArrayData_Point, jsonArrayData_Line, '变电站状态');
+            },
+            error: function (data) {
+                alert("error");
+                console.log("获取用户所有功能失败");
+            }
+        });
+    })
+</script>
+<script type="text/javascript">
+    var colors = ['#ff7f50', '#87cefa', '#da70d6', '#32cd32', '#6495ed',
+        '#ff69b4', '#ba55d3', '#cd5c5c', '#ffa500', '#40e0d0',
+        '#1e90ff', '#ff6347', '#7b68ee', '#00fa9a', '#ffd700',
+        '#6699FF', '#ff6666', '#3cb371', '#b8860b', '#30e0e0'
+    ];
+
+    var citydata =[]
+
+    var curPath = window.document.location.href;
+    var pathName = window.document.location.pathname;
+    var pos = curPath.indexOf(pathName);
+    var localhostPath = curPath.substring(0, pos);
+    var projectName = pathName.substring(0, pathName.substr(1).indexOf('/') + 1);
+    var params = {
+        "cityname": "china"
+    }
+    var json = JSON.stringify(params);
+    window.onload = function () {
+        //MyEChartsMap(testPointdata, testLinedata, '变电站状态');
+        $.ajax({
+            url: localhostPath + projectName + "/bdz",
+            dataType: "json",
+            data: json,
+            type: 'post',
+            contentType: 'application/json;charset=utf-8',
+            success: function (data) {
+                citydata = convertPointData_city(data);
+                var jsonArrayData_Point = MyEChartsData_Point(data);
+                var jsonArrayData_Line = MyEChartsData_LineBDZ(data);
+                MyEChartsMap(jsonArrayData_Point, jsonArrayData_Line, '变电站状态');
+            },
+            error: function (data) {
+                alert("error");
+                console.log("获取用户所有功能失败");
+            }
+        });
+
+    }
+
+    function MyEChartsData_Point(data) {
+        var myMap = new Map();
+        var jsonArrayDataBDZ = MyEChartsData_PointBDZ(data);
+        myMap.set("jsonArrayDataBDZ", jsonArrayDataBDZ);
+        return myMap;
+    }
+
+    function MyEChartsData_PointBDZ(data) {
+        var pmsId = "";
+        var log = "";
+        var lat = "";
+        var remark = "";
+        var dydj = "";
+        var dataPoint = data.pointDataMessageList;
+        var myMap = new Map();
+
+        var dydj1000_jsonArrayData = [{}];
+        var dydj750_jsonArrayData = [{}];
+        var dydj500_jsonArrayData = [{}];
+        var dydj350_jsonArrayData = [{}];
+        var dydj330_jsonArrayData = [{}];
+        var dydj220_jsonArrayData = [{}];
+        var dydj110_jsonArrayData = [{}];
+        var dydj66_jsonArrayData = [{}];
+        var dydj35_jsonArrayData = [{}];
+        var dydj20_jsonArrayData = [{}];
+        var dydj10_jsonArrayData = [{}];
+        var dydj6_jsonArrayData = [{}];
+
+        for (var i = 0; i < dataPoint.length; i++) {
+            var data = dataPoint[i];
+            pmsId = data.pms_id;
+            log = data.x_coord;
+            lat = data.y_coord;
+            remark = data.name;
+            dydj = data.dydj;
+            var jsonPointData = {
+                "name": pmsId,
+                "log": log,
+                "lat": lat,
+                "remark": remark,
+                "dydj": dydj
+            }
+            switch (dydj) {
+                /*'1000KV','750KV','500KV','350KV','330KV','220KV','110KV','66KV','35KV','20KV','10KV','6KV'*/
+                case "1000":
+                    dydj1000_jsonArrayData.push(jsonPointData);
+                    break;
+                case "750":
+                    dydj750_jsonArrayData.push(jsonPointData);
+                    break;
+                case "500":
+                    dydj500_jsonArrayData.push(jsonPointData);
+                    break;
+                case "350":
+                    dydj350_jsonArrayData.push(jsonPointData);
+                    break;
+                case "330":
+                    dydj330_jsonArrayData.push(jsonPointData);
+                    break;
+                case "220":
+                    dydj220_jsonArrayData.push(jsonPointData);
+                    break;
+                case "110":
+                    dydj110_jsonArrayData.push(jsonPointData);
+                    break;
+                case "66":
+                    dydj66_jsonArrayData.push(jsonPointData);
+                    break;
+                case "35":
+                    dydj35_jsonArrayData.push(jsonPointData);
+                    break;
+                case "20":
+                    dydj20_jsonArrayData.push(jsonPointData);
+                    break;
+                case "10":
+                    dydj10_jsonArrayData.push(jsonPointData);
+                    break;
+                case "6":
+                    dydj6_jsonArrayData.push(jsonPointData);
+                    break;
+            }
+        }
+        myMap.set("dydj1000_jsonArrayData", dydj1000_jsonArrayData);
+        myMap.set("dydj750_jsonArrayData", dydj750_jsonArrayData);
+        myMap.set("dydj500_jsonArrayData", dydj500_jsonArrayData);
+        myMap.set("dydj350_jsonArrayData", dydj350_jsonArrayData);
+        myMap.set("dydj330_jsonArrayData", dydj330_jsonArrayData);
+        myMap.set("dydj220_jsonArrayData", dydj220_jsonArrayData);
+        myMap.set("dydj110_jsonArrayData", dydj110_jsonArrayData);
+        myMap.set("dydj66_jsonArrayData", dydj66_jsonArrayData);
+        myMap.set("dydj35_jsonArrayData", dydj35_jsonArrayData);
+        myMap.set("dydj20_jsonArrayData", dydj20_jsonArrayData);
+        myMap.set("dydj10_jsonArrayData", dydj10_jsonArrayData);
+        myMap.set("dydj6_jsonArrayData", dydj6_jsonArrayData);
+        return myMap;
+    }
+
+    function MyEChartsData_LineBDZ(data) {
+        var fromName = "";
+        var toName = "";
+        var state = 0;
+        var startName = "";
+        var endName = "";
+        var dataPoint = data.lineDataMessageList;
+        var jsonArrayData = [{}];
+        for (var i = 0; i < dataPoint.length; i++) {
+            var data = dataPoint[i];
+            fromName = data.pms_id_start;
+            toName = data.pms_id_end;
+            state = 0;
+            startName = data.fromName;
+            endName = data.toName;
+            /*var testLinedata = [{
+                "fromName": "兰州市",
+                "toName": "嘉峪关市",
+                "state": 0
+            }]*/
+            var jsonPointData = {
+                "fromName": fromName,
+                "toName": toName,
+                "state": state,
+                "startName": startName,
+                "endName": endName
+            }
+            jsonArrayData.push(jsonPointData);
+        }
+        return jsonArrayData;
+    }
+
+    //线数据（state代表线路是否通畅，0线路正常，1线路损坏）
+    /**
+     * ECharts地图
+     * @param {Object} dataPoint 点数据
+     * @param {Object} dataLine  线数据
+     * @param {Object} title     标题
+     */
+    function MyEChartsMap(dataPoint, dataLine, title) {
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById("ServerStateData"));
+
+        $("#ServerState").html(title);
+
+        var option = new Object();
+
+        //配置信息
+        option = {
+            tooltip: {
+
+                formatter: function (params) {
+                    //这里如果不希望内容在一行显示也可以自定义css
+                    switch (params.seriesType) {
+                        case "effectScatter":
+                            //点提示信息
+                            return "站点名称：" + params.name + ",说明：" + params.value.toString().split(',')[2];
+                            break;
+                        case "lines":
+                            //线提示信息
+                            return params.data['fromName'] + "~" + params.data['toName'];
+                            break;
+                        case "map":
+                            //面提示信息
+                            return "区域：" + params.name;
+                            break;
+                    }
+                }
+            },
+            /*地图设置*/
+            visualMap: {
+                min: 0, //最小颜色
+                max: 1500, //最大颜色
+                left: 'left',
+                top: 'bottom',
+                text: ['High', 'Low'],
+                seriesIndex: [9],
+                inRange: {
+                    color: ['#e0ffff', '#FFFFCC'] //色彩区间
+                },
+                calculable: true
+            },
+            geo: {
+                map: 'china',
+                roam: true,
+                label: {
+                    normal: {
+                        show: true,
+                        textStyle: {
+                            color: 'rgba(0,0,0,0.4)'
+                        }
+                    }
+                },
+                itemStyle: {
+                    normal: {
+                        borderColor: 'rgba(0, 0, 0, 0.2)'
+                    },
+                    emphasis: {
+                        areaColor: null,
+                        shadowOffsetX: 0,
+                        shadowOffsetY: 0,
+                        shadowBlur: 20,
+                        borderWidth: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                },
+                silent:false
+            },
+            /*地图设置结束*/
+            /*数据源*/
+            series: [
+                //点数据
+                {
+                    name: "1000KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "1000KV"), //数据源
+                    symbolSize: 15, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#ff7f50' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "750KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "750KV"), //数据源
+                    symbolSize: 14, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#87cefa' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "500KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "500KV"), //数据源
+                    symbolSize: 13, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#da70d6' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "350KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "350KV"), //数据源
+                    symbolSize: 12, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#32cd32' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "330KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "330KV"), //数据源
+                    symbolSize: 12, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#6495ed' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "220KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "220KV"), //数据源
+                    symbolSize: 10, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#ba55d3' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "110KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    legendHoverLink: true,
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "110KV"), //数据源
+                    symbolSize: 9, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#cd5c5c' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "66KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "66KV"), //数据源
+                    symbolSize: 8, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#ffa500' //颜色信息
+                        }
+                    }
+                },
+                {
+                    name: "35KV",
+                    type: 'effectScatter', //类型，表示点数据
+                    coordinateSystem: 'geo',
+                    data: convertPointData(dataPoint, "35KV"), //数据源
+                    symbolSize: 7, //标记点大小
+                    //标记样式：可使用svg图标
+                    symbol: 'pin',
+                    //symbol: 'path://M512 64C306.4 64 140 230.4 140 436c0 101.6 40.8 194.4 107.2 261.6L512 960l264-263.2c66.4-67.2 107.2-159.2 107.2-261.6C884 230.4 717.6 64 512 64z m128 331.2c-4.8 62.4-54.4 112-116.8 116.8-75.2 6.4-138.4-53.6-138.4-127.2 0-70.4 57.6-128 128-128 73.6 0 133.6 63.2 127.2 138.4z',
+                    //symbol: 'path://M877.632 456.8c14.976-14.72 20.384-32.96 14.816-49.984-5.536-17.024-20.608-28.544-41.344-31.584l-190.24-27.84c-6.976-1.024-18.464-9.472-21.6-15.904l-85.12-173.696c-9.28-18.944-24.896-29.76-42.88-29.76-17.952 0-33.6 10.816-42.816 29.76l-85.12 173.696c-3.104 6.432-14.592 14.848-21.6 15.904l-190.24 27.84c-20.704 3.04-35.776 14.56-41.344 31.584-5.568 17.024-0.16 35.232 14.816 49.984l137.696 135.232c5.088 4.992 9.536 18.816 8.32 25.92l-32.48 190.912c-3.552 20.832 2.752 38.816 17.344 49.344 7.52 5.44 16.224 8.16 25.472 8.16 8.576 0 17.6-2.336 26.56-7.04l170.176-90.176c6.048-3.2 20.448-3.2 26.528 0l170.144 90.112c18.528 9.856 37.504 9.44 52.064-1.056 14.56-10.528 20.864-28.48 17.344-49.28l-32.48-190.976c-1.28-7.104 3.2-20.928 8.32-25.92l137.664-135.232z',
+                    //角度信息
+                    symbolRotate: 0,
+                    //鼠标选中说明
+                    label: {
+                        normal: {
+                            formatter: '{b}', //tooltip显示，自定义参考上方例子
+                            position: 'left', //对齐
+                            show: false //是否一直显示
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: '#40e0d0' //颜色信息
+                        }
+                    }
+                },
+                //底图数据-蓝色部分。
+                {
+                    name: 'categoryA',
+                    type: 'map',
+                    geoIndex: 0,
+                    data: citydata	// randomValue() 表示一个随机的颜色数据，如需固定颜色请修改为确定的数字
+                },
+                //线数据01  -- 正常
+                {
+                    tooltip: {},
+                    type: 'lines',
+                    zlevel: 20,
+                    symbol: ['none', 'arrow'],
+                    symbolSize: 6,
+                    //动画
+                    effect: {
+                        show: true,
+                        period: 3,
+                        trailLength: 0,
+                        //移动点样式。可使用预制，也可使用svg自定义。
+                        //symbol: 'path://M1705.06,1318.313v-89.254l-319.9-221.799l0.073-208.063c0.521-84.662-26.629-121.796-63.961-121.491c-37.332-0.305-64.482,36.829-63.961,121.491l0.073,208.063l-319.9,221.799v89.254l330.343-157.288l12.238,241.308l-134.449,92.931l0.531,42.034l175.125-42.917l175.125,42.917l0.531-42.034l-134.449-92.931l12.238-241.308L1705.06,1318.313z',
+                        symbol: 'triangle',
+                        symbolSize: 6
+                    },
+                    lineStyle: {
+                        normal: {
+                            type: 'solid',
+                            color: '#a6c84c', //线条颜色
+                            width: 1,
+                            opacity: 0.6,
+                            curveness: 0.2
+                        }
+                    },
+                    data: convertLineData(dataLine, dataPoint, 0)
+                },
+                //线数据02 --损坏
+                {
+                    tooltip: {},
+                    type: 'lines',
+                    zlevel: 20,
+                    symbol: ['none', 'arrow'],
+                    symbolSize: 6,
+                    //动画效果--异常线路不显示动画
+                    effect: {
+                        show: false,
+                        period: 3,
+                        trailLength: 0,
+                        //symbol: 'path://M1705.06,1318.313v-89.254l-319.9-221.799l0.073-208.063c0.521-84.662-26.629-121.796-63.961-121.491c-37.332-0.305-64.482,36.829-63.961,121.491l0.073,208.063l-319.9,221.799v89.254l330.343-157.288l12.238,241.308l-134.449,92.931l0.531,42.034l175.125-42.917l175.125,42.917l0.531-42.034l-134.449-92.931l12.238-241.308L1705.06,1318.313z',
+                        symbol: 'triangle',
+                        symbolSize: 6
+                    },
+                    lineStyle: {
+                        normal: {
+                            type: 'dashed',
+                            color: colors[13], //线条颜色
+                            width: 1,
+                            opacity: 0.6,
+                            curveness: 0.2
+                        }
+                    },
+                    data: convertLineData(dataLine, dataPoint, 1)
+                }
+
+            ]
+        };
+
+        myChart.setOption(option, true);
+        myChart.on("mouseover", function (params){
+            if(params.data.sign == undefined){
+                myChart.dispatchAction({
+                    type: 'downplay'
+                });
+            }
+        });
+        myChart.off('click');
+        //绑定单击事件
+        myChart.on('click', function (params) {
+            debugger
+            switch (params.seriesType) {
+                case "lines":
+                    //单击线
+                    alert(params.data['fromName'] + "~" + params.data['toName']);
+                    break;
+                //单击面
+                case 'map':
+                    var cityName = params.name;
+                    if (params.name != null) {
+                        window.location.href = localhostPath + projectName + "/city?cityname=" + cityName;
+                    }
+
+                    break;
+                //单击点
+                case "effectScatter":
+                    alert("站点名称：" + params.name + ",说明：" + params.value.toString().split(',')[2]);
+                    break;
+            }
+        });
+
+    }
+
+    function convertPointData_city(cityData) {
+        var res = [];
+        var cityName = "";
+        var cityValue = "";
+        var citySign = "";
+        var cityData_Dispose = cityData.city_message_html;
+        for (var i = 0; i < cityData_Dispose.length; i++) {
+            cityName = cityData_Dispose[i][0];
+            cityValue = cityData_Dispose[i][1];
+            citySign = undefined;
+            res.push({
+                name: cityName,
+                value: randomValue(),
+                sign:undefined
+            });
+        }
+        return res;
+    }
+
+    /**
+     * 组合点数据
+     * @param {Object} data
+     */
+    function convertPointData(dataPoint, sign) {
+        var res = [];
+        var data = dataPoint_Dispose(dataPoint, sign);
+        for (item in data) {
+            res.push({
+                name: data[item].remark,
+                value: [data[item].log, data[item].lat, data[item].remark]
+
+            });
+        }
+        return res;
+    }
+
+    function dataPoint_Dispose(dataPoint, sign) {
+        var data = [{}];
+        switch (sign) {
+            /*'1000KV','750KV','500KV','350KV','330KV','220KV','110KV','66KV','35KV','20KV','10KV','6KV'*/
+            case "1000KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj1000_jsonArrayData");
+                break;
+            case "750KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj750_jsonArrayData");
+                break;
+            case "500KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj500_jsonArrayData");
+                break;
+            case "350KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj350_jsonArrayData");
+                break;
+            case "330KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj330_jsonArrayData");
+                break;
+            case "220KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj220_jsonArrayData");
+                break;
+            case "110KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj110_jsonArrayData");
+                break;
+            case "66KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj66_jsonArrayData");
+                break;
+            case "35KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj35_jsonArrayData");
+                break;
+            case "20KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj20_jsonArrayData");
+                break;
+            case "10KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj10_jsonArrayData");
+                break;
+            case "6KV":
+                data = dataPoint.get("jsonArrayDataBDZ").get("dydj6_jsonArrayData");
+                break;
+            case "city":
+                data = dataPoint.get("jsonArrayDataCity");
+                break;
+        }
+        return data;
+    }
+
+    /**
+     * 组合线数据
+     * @param {Object} dataline 线数据
+     * @param {Object} datapoint 点数据
+     * @param{Object} type 线类型（0正常，1损坏）
+     */
+    function convertLineData(dataline, datapoint, type) {
+        var res0 = [];
+        var res1 = [];
+        for (var i = 0; i < dataline.length; i++) {
+            var fromName = dataline[i].fromName;
+            var toName = dataline[i].toName;
+            var state = dataline[i].state;
+            var startName = dataline[i].startName;
+            var endName = dataline[i].endName
+            if (undefined != fromName && undefined != toName) {
+                if (state == 0) {
+                    res0.push({
+                        fromName: startName,
+                        toName: endName,
+                        coords: [SearchData(fromName, datapoint), SearchData(toName, datapoint)]
+                    })
+                } else {
+                    res1.push({
+                        fromName: startName,
+                        toName: endName,
+                        coords: [SearchData(fromName, datapoint), SearchData(toName, datapoint)]
+                    })
+                }
+            }
+        }
+        if (type == 0) {
+            return res0;
+        } else {
+            return res1;
+        }
+    };
+
+    /**
+     * 在点数据中查找对应数据经纬度
+     * @param {Object} name
+     * @param {Object} datapoint
+     */
+    function SearchData(name, datapoint) {
+        var valueLine = [];
+        var data = datapoint;
+        for (var [key, value] of datapoint.get("jsonArrayDataBDZ")) {
+            for (var j = 0; j < value.length; j++) {
+                if (name == value[j].name) {
+                    valueLine.push(value[j].log, value[j].lat)
+                    return valueLine;
+                }
+            }
+        }
+    }
+
+    //随机颜色函数
+    function randomValue() {
+        return Math.round(Math.random() * 1000);
+    }
+</script>
+
+</html>
